@@ -30,7 +30,7 @@ const downloadFromS3 = async (fileName) => {
 
 async function ReadJson() {
     const modelsResponsesCache = JSON.parse(await downloadFromS3("mercedes.json") || '{}')
-    return console.log(modelsResponsesCache)
+    return cons ole.log(modelsResponsesCache)
 }
 
-ReadJson()
+ReadJson() 
