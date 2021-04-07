@@ -2,8 +2,14 @@
 const AWS = require('aws-sdk');
 // import individual service
 const S3 = require('aws-sdk/clients/s3');
-
+// require .env file
 require('dotenv').config();
+// require google sheet api wrapper
+const { GoogleSpreadsheet } = require('google-spreadsheet');
+// require api credentials for access
+const credentials = require('./credentials_gsheet.json');
+// require axos to make a request
+const axios = require("axios")
 
 const s3Client = () => {
 	return new AWS.S3({
@@ -28,9 +34,101 @@ const downloadFromS3 = async (fileName) => {
 	}
 }
 
-async function ReadJson() {
-    const modelsResponsesCache = JSON.parse(await downloadFromS3("mercedes.json") || '{}')
-    return console.log(modelsResponsesCache)
+async function ReadJson(requestInformation) {
+    const modelsResponses = JSON.parse(await downloadFromS3("mercedes.json") || '{}')
+
+	for(key in modelsResponses) {
+		if (modelsResponses[key].carModel.priceInformation.price == requestInformation.brutto_list_price ){
+			 requestInformation.baumuster = modelsResponses[key].carModel.baumuster;
+			 requestInformation.modelName = modelsResponses[key].carModel.name;
+			 requestInformation.modelYear = modelsResponses[key].carConfiguration.modelYear;
+	  }
+	}
+  APIcall(requestInformation)
 }
 
-ReadJson() 
+async function GetCarInformationFromGoogleSheet(){
+    const doc = new GoogleSpreadsheet(process.env.TABLE_ID); // set spreadsheet id
+    await doc.useServiceAccountAuth(credentials);
+    await doc.loadInfo();
+    const sheet = await doc.sheetsByTitle[process.env.SHEET_TITLE];
+    await sheet.loadCells();
+
+	const requestInformation = {
+		brutto_list_price : await sheet.getCellByA1('A10').value,
+		brutto_list_price_mitSonderausstattung : await sheet.getCellByA1('F2').value,
+		customer_group : await sheet.getCellByA1('B2').value,
+		sonderzahlung  : await sheet.getCellByA1('C2').value,
+		laufzeit : await sheet.getCellByA1('D2').value,
+		km : await sheet.getCellByA1('E2').value
+	}
+	ReadJson(requestInformation)
+
+} 
+
+GetCarInformationFromGoogleSheet()
+
+async function APIcall(requestInformation){
+	console.log(requestInformation)
+	const response = await axios({
+		method : 'post',
+		url : 'https://api.daimler-mobility.com/internal/ocapi/v2/de/calculations',
+		data : {
+			"context": 
+			{
+				"input": 
+				[
+					{
+						"id": "customer_type",
+						"value": requestInformation.customer_group
+					},
+					{
+						"id": "calculation_type",
+						"value": "leasing"
+					},
+					{
+						"id": "deposit_amount",
+						"value": requestInformation.sonderzahlung
+					},
+					{
+						"id": "period_months",
+						"value": requestInformation.laufzeit
+					},
+					{
+						"id": "total_mileage",
+						"value": (requestInformation.km*requestInformation.laufzeit)/12
+					}
+				],
+				"caller": "cc",
+				"market": "DE",
+				"locale": "de_DE"
+			},
+			"vehicle": 
+			{
+				"name": requestInformation.name,
+				"prices": [
+					{
+						"id": "purchasePrice",
+						"rawValue": requestInformation.brutto_list_price_mitSonderausstattung
+					}
+				],
+				"vehicleConfiguration": {
+					"baumuster": requestInformation.baumuster,
+					"modelYear": requestInformation.modelYear,
+					"division": "pc",
+					"brand":"mercedes-benz"
+				}
+			}
+		}
+		
+	})
+    .then(res => res.data.output)
+	
+
+	//const finance_rate = response.rate
+	//const leasing_product = Object.entries(response.items)
+
+	console.log("rate : "+ response.rate)
+//	console.log("ding : "+ leasing_product)
+    
+}
