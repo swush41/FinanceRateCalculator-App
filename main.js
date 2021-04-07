@@ -19,6 +19,8 @@ const s3Client = () => {
 	})
 }
 
+// get the JSON file from S3 to match our ID that is given in a spreadsheet
+
 const downloadFromS3 = async (fileName) => {
 	console.log('Start downloading file from S3', { fileName })
 	const S3 = s3Client()
@@ -38,6 +40,7 @@ async function ReadJson(requestInformation) {
     const modelsResponses = JSON.parse(await downloadFromS3("mercedes.json") || '{}')
 
 	for(key in modelsResponses) {
+		// if match, then get the required params
 		if (modelsResponses[key].carModel.priceInformation.price == requestInformation.brutto_list_price ){
 			 requestInformation.baumuster = modelsResponses[key].carModel.baumuster;
 			 requestInformation.modelName = modelsResponses[key].carModel.name;
@@ -46,6 +49,8 @@ async function ReadJson(requestInformation) {
 	}
   APIcall(requestInformation)
 }
+
+// Read data from a google spreadsheet in order to fill the required fields in our post request
 
 async function GetCarInformationFromGoogleSheet(){
     const doc = new GoogleSpreadsheet(process.env.TABLE_ID); // set spreadsheet id
@@ -67,6 +72,8 @@ async function GetCarInformationFromGoogleSheet(){
 } 
 
 GetCarInformationFromGoogleSheet()
+
+// make the request with required information we collected from S3 and Google Spreadsheets
 
 async function APIcall(requestInformation){
 	console.log(requestInformation)
