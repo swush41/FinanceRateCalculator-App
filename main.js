@@ -71,6 +71,7 @@ async function GetCarInformationFromGoogleSheet(){
 
 } 
 
+
 GetCarInformationFromGoogleSheet()
 
 // make the request with required information we collected from S3 and Google Spreadsheets
@@ -131,11 +132,26 @@ async function APIcall(requestInformation){
 	})
     .then(res => res.data.output)
 	
+	const rate = response.rate
+	const aktion = response.containers[2].items[5].disclaimer.substr(response.containers[2].items[5].disclaimer.length-5)
 
-	//const finance_rate = response.rate
-	//const leasing_product = Object.entries(response.items)
 
 	console.log("rate : "+ response.rate)
 //	console.log("ding : "+ leasing_product)
-    
+	WriteBackGoogleSheet (rate,aktion)
+}
+
+// Paste the collected information back to the user interface
+
+async function WriteBackGoogleSheet (rate,aktion){
+	const doc = new GoogleSpreadsheet(process.env.TABLE_ID); // set spreadsheet id
+    await doc.useServiceAccountAuth(credentials);
+    await doc.loadInfo();
+    const sheet = await doc.sheetsByTitle[process.env.SHEET_TITLE];
+	await sheet.loadCells('C7:D7');
+	const rate_cell = await sheet.getCellByA1('C7');
+	const aktion_cell = await sheet.getCellByA1('D7');
+	rate_cell.value = rate;
+	aktion_cell.value = aktion;
+	await sheet.saveUpdatedCells();
 }
