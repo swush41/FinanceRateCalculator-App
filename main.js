@@ -133,9 +133,8 @@ async function APIcall(requestInformation){
     .then(res => res.data.output)
 	
 	const rate = response.rate
-	const aktion_str1 = response.containers[2].items[5].disclaimer
-	const aktion_str2 = response.containers[0].items[4].disclaimer 
-	const aktion = aktion_str1 === null ? aktion_str2.substr(aktion_str2.length-5) : aktion_str1.substr(aktion_str1.length-5)
+	const aktion_str1 = response.containers.filter(item => item.id.includes('fullSummary'))[0].items.filter(item => item.id.includes('installment'))[0].disclaimer
+	const aktion = aktion_str1 === null ? "null" : aktion_str1.substr(aktion_str1.length-5)
  
 	console.log("containers: " + response.containers)
 	console.log("str1 : "+ aktion_str1)
