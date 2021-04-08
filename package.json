@@ -1,9 +1,9 @@
 {
   "name": "package.json",
   "version": "1.0.0",
-  "description": "",
-  "main": "read.js",
+  "main": "main.js",
   "dependencies": {
+    "aws-sdk": "^2.882.0",
     "dotenv": "8.2.0",
     "log": "^6.0.0"
   },
@@ -12,5 +12,15 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/swush41/Mercedes-Calculator-App.git"
+  },
+  "bugs": {
+    "url": "https://github.com/swush41/Mercedes-Calculator-App/issues"
+  },
+  "homepage": "https://github.com/swush41/Mercedes-Calculator-App#readme",
+  "description": ""
 }
