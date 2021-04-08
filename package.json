@@ -4,14 +4,16 @@
   "main": "main.js",
   "dependencies": {
     "aws-sdk": "^2.882.0",
+    "axios": "^0.21.1",
     "dotenv": "8.2.0",
+    "google-spreadsheet": "^3.1.15",
     "log": "^6.0.0"
   },
   "scripts": {
     "start": "node main.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "berkay",
   "license": "ISC",
   "devDependencies": {},
   "repository": {
