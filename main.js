@@ -133,10 +133,12 @@ async function APIcall(requestInformation){
     .then(res => res.data.output)
 	
 	const rate = response.rate
-	const aktion = response.containers[2].items[5].disclaimer.substr(response.containers[2].items[5].disclaimer.length-5)
-
-
-	console.log("rate : "+ response.rate)
+	const aktion_str1 = response.containers[2].items[5].disclaimer
+	const aktion_str2 = response.containers[0].items[4].disclaimer 
+	const aktion = aktion_str1 === null ? aktion_str2.substr(aktion_str2.length-5) : aktion_str1.substr(aktion_str1.length-5)
+ 
+	console.log("containers: " + response.containers)
+	console.log("str1 : "+ aktion_str1)
 //	console.log("ding : "+ leasing_product)
 	WriteBackGoogleSheet (rate,aktion)
 }
