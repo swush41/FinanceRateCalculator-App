@@ -163,11 +163,24 @@ async function WriteBackGoogleSheet (collected_discount,rate,aktion){
 }
 // connection to Metabase API to return collected_discount variable
 const metabaseQuery = async (vehiculum_car_id) => { 
+		const session_id = await axios({
+			method: 'post',
+			contentType : 'application/json',
+			url: 'https://metabase.vehiculum.de/api/session',
+			data : {
+				username : process.env.MAIL_ADDRESS,
+				password : process.env.PASSWORD
+			}
+		})
+		.then(res => res.data.id)
+		.catch(err => console.log(err))
+		console.log(session_id)
+
 		const collected_discount = await axios({
 		method: 'post',
 		contentType : 'application/json',
 		url: "https://metabase.vehiculum.de/api/card/1303/query",
-		headers : {'X-Metabase-Session': '89d789c3-4070-44ee-866f-4a9cec486686'},   
+		headers : {'X-Metabase-Session': session_id},   
 		data : {parameters: [{type: "category", target: ["variable", ["template-tag", "vehiculum_car_id"]], value: vehiculum_car_id}]}
 	})
 	.then(res => res.data.data.rows[0][1])
