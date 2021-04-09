@@ -58,14 +58,16 @@ async function GetCarInformationFromGoogleSheet(){
     await doc.loadInfo();
     const sheet = await doc.sheetsByTitle[process.env.SHEET_TITLE];
     await sheet.loadCells();
+	const vehiculum_car_id = await sheet.getCellByA1('A2').value;
 
 	const requestInformation = {
 		brutto_list_price : await sheet.getCellByA1('A10').value,
-		brutto_list_price_mitSonderausstattung : await sheet.getCellByA1('F2').value,
+		brutto_list_price_mitSonderausstattung : await sheet.getCellByA1('G2').value,
 		customer_group : await sheet.getCellByA1('B2').value,
-		sonderzahlung  : await sheet.getCellByA1('C2').value,
-		laufzeit : await sheet.getCellByA1('D2').value,
-		km : await sheet.getCellByA1('E2').value
+		sonderzahlung  : await sheet.getCellByA1('D2').value,
+		laufzeit : await sheet.getCellByA1('E2').value,
+		km : await sheet.getCellByA1('F2').value,
+		collected_discount : await metabaseQuery(vehiculum_car_id)
 	}
 	ReadJson(requestInformation)
 
@@ -132,27 +134,42 @@ async function APIcall(requestInformation){
 	})
     .then(res => res.data.output)
 	
+	const collected_discount = requestInformation.collected_discount
 	const rate = response.rate
-	const aktion_str1 = response.containers.filter(item => item.id.includes('fullSummary'))[0].items.filter(item => item.id.includes('installment'))[0].disclaimer
-	const aktion = aktion_str1 === null ? "null" : aktion_str1.substr(aktion_str1.length-5)
+	const aktion_str = response.containers.filter(item => item.id.includes('fullSummary'))[0].items.filter(item => item.id.includes('installment'))[0].disclaimer
+	const aktion = aktion_str === null ? "null" : aktion_str.substr(aktion_str.length-5)
  
 	console.log("containers: " + response.containers)
-	console.log("str1 : "+ aktion_str1)
+	console.log("str1 : "+ aktion_str)
 //	console.log("ding : "+ leasing_product)
-	WriteBackGoogleSheet (rate,aktion)
+	WriteBackGoogleSheet (collected_discount,rate,aktion)
 }
 
 // Paste the collected information back to the user interface
 
-async function WriteBackGoogleSheet (rate,aktion){
+async function WriteBackGoogleSheet (collected_discount,rate,aktion){
 	const doc = new GoogleSpreadsheet(process.env.TABLE_ID); // set spreadsheet id
     await doc.useServiceAccountAuth(credentials);
     await doc.loadInfo();
     const sheet = await doc.sheetsByTitle[process.env.SHEET_TITLE];
-	await sheet.loadCells('C7:D7');
+	await sheet.loadCells('A6:D12');
 	const rate_cell = await sheet.getCellByA1('C7');
 	const aktion_cell = await sheet.getCellByA1('D7');
+	const collectedDiscount_cell = await sheet.getCellByA1('A12')
 	rate_cell.value = rate;
 	aktion_cell.value = aktion;
+	collectedDiscount_cell.value = collected_discount/100
 	await sheet.saveUpdatedCells();
+}
+// connection to Metabase API to return collected_discount variable
+const metabaseQuery = async (vehiculum_car_id) => { 
+		const collected_discount = await axios({
+		method: 'post',
+		contentType : 'application/json',
+		url: "https://metabase.vehiculum.de/api/card/1303/query",
+		headers : {'X-Metabase-Session': '89d789c3-4070-44ee-866f-4a9cec486686'},   
+		data : {parameters: [{type: "category", target: ["variable", ["template-tag", "vehiculum_car_id"]], value: vehiculum_car_id}]}
+	})
+	.then(res => res.data.data.rows[0][1])
+	return collected_discount
 }
