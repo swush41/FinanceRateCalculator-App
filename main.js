@@ -62,12 +62,13 @@ async function GetCarInformationFromGoogleSheet(){
 
 	const requestInformation = {
 		brutto_list_price : await sheet.getCellByA1('A10').value,
-		brutto_list_price_mitSonderausstattung : await sheet.getCellByA1('G2').value,
+		brutto_list_price_mitSonderausstattung : await sheet.getCellByA1('H2').value,
 		customer_group : await sheet.getCellByA1('B2').value,
-		sonderzahlung  : await sheet.getCellByA1('D2').value,
-		laufzeit : await sheet.getCellByA1('E2').value,
-		km : await sheet.getCellByA1('F2').value,
-		collected_discount : await metabaseQuery(vehiculum_car_id)
+		sonderzahlung  : await sheet.getCellByA1('E2').value,
+		laufzeit : await sheet.getCellByA1('F2').value,
+		km : await sheet.getCellByA1('G2').value,
+		collected_discount : await metabaseQuery(vehiculum_car_id),
+		downpayment : await sheet.getCellByA1('C2').value
 	}
 	ReadJson(requestInformation)
 
@@ -98,7 +99,7 @@ async function APIcall(requestInformation){
 					},
 					{
 						"id": "deposit_amount",
-						"value": requestInformation.sonderzahlung
+						"value": requestInformation.sonderzahlung + requestInformation.downpayment
 					},
 					{
 						"id": "period_months",
@@ -152,9 +153,9 @@ async function WriteBackGoogleSheet (collected_discount,rate,aktion){
     await doc.useServiceAccountAuth(credentials);
     await doc.loadInfo();
     const sheet = await doc.sheetsByTitle[process.env.SHEET_TITLE];
-	await sheet.loadCells('A6:D12');
-	const rate_cell = await sheet.getCellByA1('C7');
-	const aktion_cell = await sheet.getCellByA1('D7');
+	await sheet.loadCells('A6:E12');
+	const rate_cell = await sheet.getCellByA1('D7');
+	const aktion_cell = await sheet.getCellByA1('E7');
 	const collectedDiscount_cell = await sheet.getCellByA1('A12')
 	rate_cell.value = rate;
 	aktion_cell.value = aktion;
